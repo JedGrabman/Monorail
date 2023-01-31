@@ -1,0 +1,18 @@
+\section{Appendix}
+```{r, fig.cap='Alphanumeric labeling of squares', fig.align = 'center', echo=FALSE, label='alphanum', out.width = "100%"}
+
+knitr::include_graphics("images/alphanum.png")
+```
+In this appendix, squares are denoted by a letter and number, which refer to a row and column in the position diagrams (See Figure \ref{fig:alphanum}).
+Moves are referred to by the squares where tiles are placed. The orientation of the tiles is forced due to there only being 1 way to complete a path,
+which makes this notation unambiguous. Each equivalence class of positions is listed on its own page, with a diagram of a particular position within that class. 
+A table is listed below each diagram with the list of all possible moves, what class of positions results from making that move (which is a clickable link to jump to that page of the appendix)
+and whether making that move results in a win or loss if both players make no additional mistakes.
+
+Note that because the pages are for equivalence classes of positions, different positions may link to the same page. For example, the positions in Figure \ref{fig:same} are both
+of equivalence class 3-L5x. Each section lists one representative position and the moves that can be made in that position. Other positions within the same equivalence class may
+also exist and will have different available moves. However, due to the way the equivalence classes are defined, every move for a position in the equivalence class will have
+an equivalent move available in the displayed position. A move and its equivalent move may result in different positions, but the different states will be part of the
+same equivalence class. This ensures win/loss evaluations are the same for all positions within an equivalence class.
+
+Classes are ordered first by the number of remaining tiles, then alphabetically. See the [Results](#results) section for more details on equivalence class naming conventions.

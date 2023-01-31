@@ -1,3 +1,5 @@
+from Square import Square
+
 class SquareSet(set):
     def __init__(self, x_min_or_squares = None, x_max = None, y_min = None, y_max = None):
         self.hash = None
@@ -21,5 +23,7 @@ class SquareSet(set):
                 self.add(Square(x, y))
 
     def __hash__(self):
-        square_hashes = sorted([hash(square) for square in self])
-        return(hash(tuple(square_hashes)))
+        if self.hash is None:
+            square_hashes = sorted([hash(square) for square in self])
+            self.hash = hash(tuple(square_hashes))
+        return(self.hash)

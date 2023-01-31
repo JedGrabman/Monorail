@@ -1,0 +1,154 @@
+---
+title: "Solving The Genius's Monorail"
+subtitle: "A Winning Strategy for the First Player"
+author: Jed Grabman
+output:
+  pdf_document: 
+    extra_dependencies: "subfig"
+linkcolor: blue
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Abstract
+
+`Monorail` is a two-person tile placing game that was popularized by the South Korean reality show `The Genius` in 2014.
+This paper outlines a computer-assisted proof that `Monorail` is a win for the first player. The proof applies the minimax algorithm to equivalence classes of positions within the game. To the author's knowledge, this is the first publicly published solution to the game.
+
+## Background
+`The Genius` was a South Korean reality show that aired for 4 seasons, from 2013 to 2015, where players were eliminated through a series of social/strategy games. The prize for winning each season ranged from approximately \$50,000 to \$100,000. Additionally, a Dutch version of the show aired for 1 season in 2022 (which had no prize). In both versions of the show, each episode would culminate in a "Death Match", a game that was used to determine which of two contestants would be eliminated. `Monorail` was used as a Death Match twice during the Korean series, and two additional times during the Dutch series (where it was called "On Track"). While some players claimed to know a winning strategy, their strategies were never rigorously presented on the program and they never were in a Death Match when `Monorail` was played, so it is impossible to determine whether those strategies were correct and complete.
+
+## Rules
+`Monorail` is a tile-placing game where the objective is to finish a looping train track. The game is played with a set of 16 identical double-sided square tiles with train tracks on them. One side of the tile has the train tracks continuing in a straight line, while the other side has the train tracks turning 90 degrees (Figure \ref{fig:pieces}).
+
+```{r, fig.cap='Sides of tiles', fig.ncol = 2, fig.subcap=c('Straight Side', 'Corner Side'), fig.align = 'center', out.width = "20%", echo=FALSE, label='pieces'}
+knitr::include_graphics("images/straight.png")
+knitr::include_graphics("images/bend.png")
+```
+
+Before the start of the game, a special double-wide tile is placed that represents the train station (Figure \ref{fig:station}). 
+
+```{r test, fig.cap='Station', fig.ncol = 2, fig.align = 'center', out.width = "40%", echo=FALSE, label = 'station'}
+knitr::include_graphics("images/station.png")
+```
+
+On each player's turn, they may place 1, 2 or 3 tiles, subject to the following conditions:
+
+* At least 1 of the placed tiles must be orthogonally adjacent to a previously placed tile
+* All placed tiles must be adjacent and in a straight line (either horizontally, or vertically)
+
+The player may always choose which side of each tile is face-up and the rotation of each tile. This means they can always connect any two edges of the tile with train tracks by placing it in a specific way. Additionally, the tiles placed by the player do not need to connect to the existing track, nor does the track need to be connected between the placed tiles (e.g. Figure \ref{fig:start}). The move restrictions are on where the tiles are placed, not the orientation of the tiles.
+
+```{r, fig.cap='Example starting move', fig.ncol = 2, fig.align = 'center', out.width = "40%", echo=FALSE, label = 'start'}
+knitr::include_graphics("images/start_move_ex.png")
+```
+
+The goal of the game is to be the player that finishes a loop that connects the start and end of the station (Figure \ref{fig:loop}).
+
+```{r, fig.cap='Example finished game', fig.ncol = 2, fig.align = 'center', out.width = "80%", echo=FALSE, label='loop'}
+knitr::include_graphics("images/example_finish.png")
+```
+
+A player wins if they place tiles that finish a loop, provided that the loop uses all the tiles that have been placed. However, the loop does not need to use all 16 tiles in the game.
+
+In some cases, it may become impossible to complete a loop with the remaining tiles (e.g. Figure \ref{fig:impossible}).
+
+```{r, fig.cap='Impossible to complete a loop', fig.align = 'center', out.width = "50%", fig.subcap=c('Not enough tiles remaining', 'Impossible junction'), echo=FALSE, label = 'impossible'}
+
+knitr::include_graphics("images/not_enough_tiles.png")
+knitr::include_graphics("images/impossible_junction.png")
+```
+
+
+If a player believes this is the case, they may declare the task impossible and challenge their opponent to complete the loop.
+Their opponent can then use any or all the remaining tiles to try to complete a loop. If they can complete the loop, they win. If they cannot, the player who declared the loop impossible wins.
+
+### Rule Modifications for Analysis
+
+If it were ever the case during a game that the loop was impossible to complete, it is clear that the player whose turn it is could win by declaring that fact. Thus, in a game between perfect strategists, it would never be to a player's benefit to make a move that resulted in a track that cannot be completed. Additionally, if a player starts their turn in a position where the track is completable, they may always make a move that results in a track that is completable by extending the track one tile along one of the possible routes. Thus, a player will never be forced to make a move that turns a completable track into one that cannot be completed. Therefore, the rules can be modified so that a player may not make a move that results in a track that's impossible to complete. This simplifies the assessment of positions without affecting whether each position is winning or losing for the player to move.
+
+## Mathematical background
+### Feasibility of Using the Minimax Algorithm
+`Monorail` is a finite, two-player, turn-taking game with no randomness or hidden information. Therefore, it is theoretically solvable by applying [the minimax algorithm](https://en.wikipedia.org/wiki/Minimax). However, not all games that are theoretically solvable by minimax can be solved in practice. In some cases, running the algorithm to completion would be infeasible due to the number of possible positions in the game (e.g. chess).
+
+Thus, it is advisable to estimate the number of possible positions in `Monorail` before committing to using minimax. One starting point for this estimate is to determine the number of distinct loops that can be made in `Monorail`. A manual examination of small loops and a search of the Online Encyclopedia of Integer Sequences found [A002931](https://oeis.org/A002931): "Number of self-avoiding polygons of length 2n on square lattice (not allowing rotations)". This revealed that there are 15,268 possible loops with 18 tiles (2 station tiles + 16 playable tiles). However, in `Monorail` two games may end with a loop of the same shape but with the station in different locations. Additionally, there will be positions in partially finished games that are not considered when only counting full loops. We can calculate a loose upper-bound for the number of positions in games that finish will no leftover tiles as:
+
+$$\text{Number of possible loops } * \text{ Number of possible station placements } * \text{ Number of possible intermediate positions}$$
+$$ < 15,268 * 18 * 2^{16} = 18,010,865,664$$
+However, some games will finish before using every tile. Using analogous calculations and adding to the previous result yields an upper-bound of $18,837,595,856$ total positions. However, this is clearly an overestimate as: 
+
+* Not every loop will have space for a station (i.e. 2 connected horizontal tiles)
+* In loops that can fit a station, the station may only go in limited spots
+* Many calculated partially finished games cannot occur, since they include non-adjacent tiles and
+* The same partially finished position can occur for many distinct final tracks
+
+In fact, a search finds that factoring in where stations may be placed reduces the number of possible loops to $23,162$ (including translations) and reduces the upper-bound for number of possible positions to $1,317,857,408$.
+
+
+
+Finally, this number could also be reduced even further (if needed) by treating translations, mirror images and rotations as identical for calculation purposes, suggesting that minimax is a feasible approach.
+
+## Results
+Following implementation, the minimax algorithm successfully found a winning move for the first player. An examination of the move showed that it uniquely determined the loop that could be finished with the remaining tiles (Figure \ref{fig:winning}).
+
+```{r, fig.cap='Winning move with only possible path', fig.align = 'center', out.width = "80%", echo=FALSE, label='winning'}
+knitr::include_graphics("images/L4x-S+L3x.png")
+```
+
+From the position following this move, there are a total of 4900 positions that can be reached (including the one immediately after the move). However, many of these positions are effectively the same. For example, the 2 positions in Figure \ref{fig:same} have 8 tiles remaining unplaced, and a move must be either in the group of 5 tiles forming a long L, or the set of 3 tiles in a line. There is a clear analogue between the moves in one position and the moves in the other position. These positions may be considered to belong to the same equivalence class and the strategy found by the minimax algorithm may be expressed more compactly by referencing these classes.
+
+```{r, fig.cap='Positions from the same class', fig.subcap=c('A', 'B'), fig.align = 'center', out.width = "50%", echo=FALSE, label='same'}
+
+knitr::include_graphics("images/3-L5x_ex1.png")
+knitr::include_graphics("images/3-L5x_ex4.png")
+```
+
+Care must be taken when determining which positions belong to the same equivalence class, because some positions which look similar have important differences. For example, the two positions in Figure \ref{fig:lgroups} look similar because the three remaining spots to play a tile are in an L shape. However, in position A, it is legal to place only the corner piece (since it is adjacent to an already placed piece), while in position B it is not. In fact, playing in the corner is the only winning move in position A, while it is a losing move in position B.
+
+\captionsetup[subfigure]{labelformat=empty}
+```{r, fig.cap='Distinct L Groups', fig.ncol = 2, fig.subcap=c('Corner piece placeable', 'Corner piece not placeable'), out.width = "50%", echo=FALSE, label='lgroups'}
+knitr::include_graphics("images/L.png")
+knitr::include_graphics("images/Lx.png")
+```
+
+If all the empty-spots in a position are adjacent, we call the collection of spots a "base group". There are 23 equivalence classes of base groups, as seen in Figure \ref{fig:base}. If the empty spots in a position form 2 or more distinct groups, we refer to the the position by concatenating all of shapes present with hyphens (e.g. the position after the winning move contains both an L4x and an S+L3x, making it an L4x-S+L3x). To be unambiguous, when multiple groups are present, they are written in alphabetical order (with numbers considered before letters), e.g. the equivalence class of a position with both an L and an S is "L-S", not "S-L".
+
+
+\captionsetup[subfigure]{labelformat=empty}
+```{r, fig.cap='Base Groups', fig.ncol = 4, fig.subcap=c('1', '2', '3', '4', '5', 'L', 'Lx', 'L3', 'L3x', 'L4', 'L4x', 'L5x', 'S', 'S+1', 'S+2', 'S+3', 'S+L3x', 'C4', 'C4+1', 'C5', 'T', 'T4', 'T5'), out.width = "25%", echo=FALSE, label='base'}
+knitr::include_graphics("images/1.png")
+knitr::include_graphics("images/2.png")
+knitr::include_graphics("images/3.png")
+knitr::include_graphics("images/4.png")
+knitr::include_graphics("images/5.png")
+knitr::include_graphics("images/L.png")
+knitr::include_graphics("images/Lx.png")
+knitr::include_graphics("images/L3.png")
+knitr::include_graphics("images/L3x.png")
+knitr::include_graphics("images/L4.png")
+knitr::include_graphics("images/L4x.png")
+knitr::include_graphics("images/L5x.png")
+knitr::include_graphics("images/S.png")
+knitr::include_graphics("images/S+1.png")
+knitr::include_graphics("images/S+2.png")
+knitr::include_graphics("images/S+3.png")
+knitr::include_graphics("images/S+L3x.png")
+knitr::include_graphics("images/C4.png")
+knitr::include_graphics("images/C4+1.png")
+knitr::include_graphics("images/C5.png")
+knitr::include_graphics("images/T.png")
+knitr::include_graphics("images/T4.png")
+knitr::include_graphics("images/T5.png")
+```
+
+This approach reduces the search space from 4900 positions to 392 equivalence classes. A full proof with each equivalence class, possible moves and position evaluation (i.e. Winning or Losing) is included in the appendix.
+\newpage
+
+```{r alphanum_import, child="alphanum.txt", eval = TRUE}
+```
+
+```{r test, child="summary.txt", out.width = "50%", eval=TRUE}
+```
+

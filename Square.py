@@ -1,8 +1,20 @@
 class Square(object):
+    _registry = dict()
+
+    def __new__(cls, x_pos, y_pos):
+        if (x_pos, y_pos) in Square._registry:
+            return Square._registry[x_pos, y_pos]
+        instance = super().__new__(cls)  # don't pass extra *args and **kwargs to obj.__new__
+        Square._registry[x_pos,y_pos] = instance
+        return instance
+
     def __init__(self, x_pos, y_pos):
+        if hasattr(self, "x_pos"):  # avoid running init twice if the attribute is already set
+            return
         self.x_pos = x_pos
         self.y_pos = y_pos
         self.adjacencies = None
+        self.hash = None
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -11,7 +23,9 @@ class Square(object):
             return False
 
     def __hash__(self):
-        return(hash((self.x_pos, self.y_pos)))
+        if self.hash is None:
+            self.hash = hash((self.x_pos, self.y_pos))
+        return(self.hash)
 
     def find_adjacencies(self):
         adjacencies = set()

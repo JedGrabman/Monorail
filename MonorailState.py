@@ -1,5 +1,11 @@
+from SquareSet import SquareSet
+from TileSet import TileSet
+from Square import Square
+
 class MonorailState:
     def __init__(self, fixed_tiles, tiles_dict, path_dict):
+        POOL_SIZE = 16
+      #  print(POOL_SIZE)
         self.fixed_tiles = fixed_tiles
         self.tiles_dict = tiles_dict
         self.path_dict = path_dict
